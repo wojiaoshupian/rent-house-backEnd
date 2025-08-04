@@ -4,6 +4,7 @@ import com.example.demo.dto.BuildingDto;
 import com.example.demo.entity.Building;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -87,12 +88,24 @@ public class BuildingMapper {
     }
 
     public List<BuildingDto> toDtoList(List<Building> buildings) {
-        if (buildings == null) {
-            return null;
+        if (buildings == null || buildings.isEmpty()) {
+            return new ArrayList<>();
         }
-        return buildings.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
+
+        List<BuildingDto> result = new ArrayList<>();
+        for (Building building : buildings) {
+            try {
+                BuildingDto dto = toDto(building);
+                if (dto != null) {
+                    result.add(dto);
+                }
+            } catch (Exception e) {
+                // 跳过有问题的数据，继续处理其他数据
+                System.err.println("Error converting building to DTO: " + e.getMessage());
+            }
+        }
+
+        return result;
     }
 
     public List<Building> toEntityList(List<BuildingDto> buildingDtos) {

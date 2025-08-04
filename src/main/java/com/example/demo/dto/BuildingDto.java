@@ -40,7 +40,6 @@ public class BuildingDto {
     private Building.RentCollectionMethod rentCollectionMethod = Building.RentCollectionMethod.FIXED_MONTH_START;
     
     private Long createdBy;
-    private String createdByUsername; // 创建者用户名
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -80,10 +79,7 @@ public class BuildingDto {
     
     public Long getCreatedBy() { return createdBy; }
     public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
-    
-    public String getCreatedByUsername() { return createdByUsername; }
-    public void setCreatedByUsername(String createdByUsername) { this.createdByUsername = createdByUsername; }
-    
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     

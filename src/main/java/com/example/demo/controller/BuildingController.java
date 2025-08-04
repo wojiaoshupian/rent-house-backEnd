@@ -1,8 +1,10 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.ApiResponse;
+import com.example.demo.util.ApiResponse;
 import com.example.demo.dto.BuildingDto;
 import com.example.demo.dto.UserDto;
+import com.example.demo.entity.UserBuilding;
+import com.example.demo.repository.UserBuildingRepository;
 import com.example.demo.service.BuildingService;
 import com.example.demo.service.UserService;
 import com.example.demo.security.JwtTokenUtil;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/buildings")
@@ -33,6 +36,9 @@ public class BuildingController {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
+    @Autowired
+    private UserBuildingRepository userBuildingRepository;
+
     public BuildingController() {}
     
     @PostMapping
@@ -45,6 +51,7 @@ public class BuildingController {
             // 从JWT token获取用户ID
             Long currentUserId = userId;
             String newToken = null;
+            Long tokenExpiresAt = null;
 
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
@@ -61,6 +68,9 @@ public class BuildingController {
                     }
                     // 刷新token
                     newToken = jwtTokenUtil.refreshToken(token);
+                    if (newToken != null) {
+                        tokenExpiresAt = jwtTokenUtil.calculateExpirationTime();
+                    }
                 }
             }
 
@@ -72,8 +82,8 @@ public class BuildingController {
             BuildingDto createdBuilding = buildingService.createBuilding(buildingDto, currentUserId);
             log.info("楼宇创建成功: {}", createdBuilding.getBuildingName());
 
-            // 创建响应，包含新token，返回单个创建的楼宇
-            ApiResponse<BuildingDto> response = ApiResponse.success(createdBuilding, newToken);
+            // 创建响应，包含新token和过期时间，返回单个创建的楼宇
+            ApiResponse<BuildingDto> response = ApiResponse.success(createdBuilding, newToken, tokenExpiresAt);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("楼宇创建失败: {}", e.getMessage());
@@ -110,8 +120,29 @@ public class BuildingController {
     @GetMapping("/owned/{userId}")
     @Operation(summary = "获取用户拥有的楼宇", description = "获取指定用户拥有的所有楼宇")
     public ResponseEntity<ApiResponse<List<BuildingDto>>> getUserOwnedBuildings(@PathVariable Long userId) {
-        List<BuildingDto> buildings = buildingService.getUserOwnedBuildings(userId);
-        return ResponseEntity.ok(ApiResponse.success(buildings));
+        try {
+            List<BuildingDto> buildings = buildingService.getUserOwnedBuildings(userId);
+            return ResponseEntity.ok(ApiResponse.success(buildings));
+        } catch (Exception e) {
+            log.error("获取用户拥有的楼宇失败", e);
+            return ResponseEntity.ok(ApiResponse.error("获取楼宇列表失败: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/owned/{userId}/simple")
+    @Operation(summary = "获取用户拥有的楼宇（简化版）", description = "获取指定用户拥有的楼宇ID列表")
+    public ResponseEntity<ApiResponse<String>> getUserOwnedBuildingsSimple(@PathVariable Long userId) {
+        try {
+            List<UserBuilding> userBuildings = userBuildingRepository.findByUserId(userId);
+            List<Long> buildingIds = userBuildings.stream()
+                    .map(UserBuilding::getBuildingId)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(ApiResponse.success("用户拥有的楼宇ID: " + buildingIds.toString()));
+        } catch (Exception e) {
+            log.error("获取用户拥有的楼宇失败", e);
+            return ResponseEntity.ok(ApiResponse.error("获取楼宇列表失败: " + e.getMessage()));
+        }
     }
     
     @GetMapping("/search")

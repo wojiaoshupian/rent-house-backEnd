@@ -106,4 +106,31 @@ public class JwtTokenUtil {
             return null;
         }
     }
-} 
+
+    /**
+     * 获取token过期时间戳（毫秒）
+     */
+    public Long getTokenExpirationTime(String token) {
+        try {
+            Date expiration = extractExpiration(token);
+            return expiration.getTime();
+        } catch (Exception e) {
+            log.error("Failed to get token expiration time: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 获取配置的过期时间（毫秒）
+     */
+    public Long getExpirationTime() {
+        return expiration;
+    }
+
+    /**
+     * 计算新token的过期时间戳
+     */
+    public Long calculateExpirationTime() {
+        return System.currentTimeMillis() + expiration;
+    }
+}

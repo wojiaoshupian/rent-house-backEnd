@@ -1,6 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.dto.ApiResponse;
+import com.example.demo.util.ApiResponse;
 import com.example.demo.dto.UserDto;
 import com.example.demo.dto.UserRegistrationDto;
 import com.example.demo.service.UserService;
@@ -52,15 +52,16 @@ public class AuthController {
             
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String token = jwtTokenUtil.generateToken(userDetails);
-            
+            Long tokenExpiresAt = jwtTokenUtil.calculateExpirationTime();
+
             UserDto userDto = userService.findByUsername(username).orElse(null);
             if (userDto == null) {
                 return ResponseEntity.badRequest().body(ApiResponse.error("用户信息获取失败"));
             }
-            
+
             log.info("用户登录成功: {}", username);
-            
-            return ResponseEntity.ok(ApiResponse.success(userDto, token));
+
+            return ResponseEntity.ok(ApiResponse.success(userDto, token, tokenExpiresAt));
             
         } catch (Exception e) {
             log.error("用户登录失败: {}", e.getMessage());
@@ -77,8 +78,9 @@ public class AuthController {
             
             // 生成JWT token
             String token = jwtTokenUtil.generateToken(createdUser.getUsername());
-            
-            return ResponseEntity.ok(ApiResponse.success(createdUser, token));
+            Long tokenExpiresAt = jwtTokenUtil.calculateExpirationTime();
+
+            return ResponseEntity.ok(ApiResponse.success(createdUser, token, tokenExpiresAt));
         } catch (Exception e) {
             log.error("用户注册失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
@@ -124,18 +126,74 @@ public class AuthController {
         if (token != null && token.startsWith("Bearer ")) {
             String jwt = token.substring(7);
             boolean isValid = jwtTokenUtil.validateToken(jwt);
-            
+
             if (isValid) {
                 String username = jwtTokenUtil.extractUsername(jwt);
+                Long expiresAt = jwtTokenUtil.getTokenExpirationTime(jwt);
                 Map<String, Object> response = new HashMap<>();
                 response.put("valid", true);
                 response.put("username", username);
+                response.put("expiresAt", expiresAt);
                 return ResponseEntity.ok(ApiResponse.success(response));
             }
         }
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("valid", false);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-} 
+
+    @PostMapping("/refresh")
+    @Operation(summary = "刷新令牌", description = "使用有效的JWT令牌获取新的令牌")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> refreshToken(@RequestHeader("Authorization") String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            String jwt = token.substring(7);
+
+            if (jwtTokenUtil.validateToken(jwt)) {
+                String newToken = jwtTokenUtil.refreshToken(jwt);
+                Long tokenExpiresAt = jwtTokenUtil.calculateExpirationTime();
+
+                if (newToken != null) {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("token", newToken);
+                    response.put("expiresAt", tokenExpiresAt);
+                    return ResponseEntity.ok(ApiResponse.success(response));
+                }
+            }
+        }
+
+        return ResponseEntity.badRequest().body(ApiResponse.error("无效的令牌"));
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
+    public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            if (token != null && token.startsWith("Bearer ")) {
+                String jwt = token.substring(7);
+
+                if (jwtTokenUtil.validateToken(jwt)) {
+                    String username = jwtTokenUtil.extractUsername(jwt);
+                    UserDto userDto = userService.findByUsername(username).orElse(null);
+
+                    if (userDto != null) {
+                        log.info("获取当前用户信息成功: {}", username);
+                        return ResponseEntity.ok(ApiResponse.success(userDto));
+                    } else {
+                        log.error("用户不存在: {}", username);
+                        return ResponseEntity.badRequest().body(ApiResponse.error("用户不存在"));
+                    }
+                } else {
+                    log.error("无效的令牌");
+                    return ResponseEntity.status(401).body(ApiResponse.unauthorized("令牌无效或已过期"));
+                }
+            } else {
+                log.error("缺少Authorization头或格式错误");
+                return ResponseEntity.status(401).body(ApiResponse.unauthorized("缺少有效的授权令牌"));
+            }
+        } catch (Exception e) {
+            log.error("获取当前用户信息失败: {}", e.getMessage());
+            return ResponseEntity.status(500).body(ApiResponse.serverError("获取用户信息失败"));
+        }
+    }
+}
