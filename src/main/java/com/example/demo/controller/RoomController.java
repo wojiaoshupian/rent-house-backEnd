@@ -2,6 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.util.ApiResponse;
 import com.example.demo.dto.RoomDto;
+import com.example.demo.dto.UpdateRentalStatusRequest;
+import com.example.demo.entity.Room;
 import com.example.demo.security.JwtTokenUtil;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.UserService;
@@ -177,6 +179,59 @@ public class RoomController {
 
         } catch (Exception e) {
             log.error("房间更新失败: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    /**
+     * 更新房间出租状态
+     */
+    @PutMapping("/{id}/rental-status")
+    @Operation(summary = "更新房间出租状态", description = "更新指定房间的出租状态")
+    public ResponseEntity<ApiResponse<RoomDto>> updateRoomRentalStatus(
+            @PathVariable Long id,
+            @RequestBody UpdateRentalStatusRequest request,
+            @RequestHeader("Authorization") String authHeader,
+            @Parameter(description = "用户ID（可选，如果不提供则从token中获取）") @RequestParam(required = false) Long userId) {
+
+        try {
+            // 从JWT token获取用户ID
+            Long currentUserId = userId;
+            String newToken = null;
+            Long tokenExpiresAt = null;
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                if (jwtTokenUtil.validateToken(token)) {
+                    String username = jwtTokenUtil.extractUsername(token);
+                    // 根据username获取userId
+                    if (currentUserId == null) {
+                        currentUserId = userService.findByUsername(username)
+                                .map(user -> user.getId())
+                                .orElse(1L); // 默认值
+                    }
+                    // 刷新token
+                    newToken = jwtTokenUtil.refreshToken(token);
+                    if (newToken != null) {
+                        tokenExpiresAt = jwtTokenUtil.calculateExpirationTime();
+                    }
+                }
+            }
+
+            // 如果没有提供userId，使用默认值1
+            if (currentUserId == null) {
+                currentUserId = 1L;
+            }
+
+            RoomDto updatedRoom = roomService.updateRoomRentalStatus(id, request.getRentalStatus(), currentUserId);
+            log.info("房间出租状态更新成功: {}, 新状态: {}", id, request.getRentalStatus());
+
+            // 创建响应，包含新token和过期时间
+            ApiResponse<RoomDto> response = ApiResponse.success(updatedRoom, newToken, tokenExpiresAt);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("房间出租状态更新失败: {}", e.getMessage());
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }

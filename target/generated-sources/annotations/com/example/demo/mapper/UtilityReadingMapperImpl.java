@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-08-04T15:49:37+0800",
+    date = "2025-08-05T09:13:06+0800",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.42.50.v20250729-0351, environment: Java 21.0.8 (Eclipse Adoptium)"
 )
 @Component
@@ -27,30 +27,30 @@ public class UtilityReadingMapperImpl implements UtilityReadingMapper {
         utilityReadingDto.setRoomNumber( entityRoomRoomNumber( entity ) );
         utilityReadingDto.setReadingTypeDescription( readingTypeToDescription( entity.getReadingType() ) );
         utilityReadingDto.setReadingStatusDescription( readingStatusToDescription( entity.getReadingStatus() ) );
-        utilityReadingDto.setCreatedAt( entity.getCreatedAt() );
-        utilityReadingDto.setCreatedBy( entity.getCreatedBy() );
-        utilityReadingDto.setElectricityPreviousReading( entity.getElectricityPreviousReading() );
-        utilityReadingDto.setElectricityReading( entity.getElectricityReading() );
-        utilityReadingDto.setElectricityUsage( entity.getElectricityUsage() );
-        utilityReadingDto.setHotWaterPreviousReading( entity.getHotWaterPreviousReading() );
-        utilityReadingDto.setHotWaterReading( entity.getHotWaterReading() );
-        utilityReadingDto.setHotWaterUsage( entity.getHotWaterUsage() );
         utilityReadingDto.setId( entity.getId() );
+        utilityReadingDto.setRoomId( entity.getRoomId() );
+        utilityReadingDto.setReadingDate( entity.getReadingDate() );
+        utilityReadingDto.setReadingTime( entity.getReadingTime() );
+        utilityReadingDto.setElectricityReading( entity.getElectricityReading() );
+        utilityReadingDto.setElectricityPreviousReading( entity.getElectricityPreviousReading() );
+        utilityReadingDto.setElectricityUsage( entity.getElectricityUsage() );
+        utilityReadingDto.setWaterReading( entity.getWaterReading() );
+        utilityReadingDto.setWaterPreviousReading( entity.getWaterPreviousReading() );
+        utilityReadingDto.setWaterUsage( entity.getWaterUsage() );
+        utilityReadingDto.setHotWaterReading( entity.getHotWaterReading() );
+        utilityReadingDto.setHotWaterPreviousReading( entity.getHotWaterPreviousReading() );
+        utilityReadingDto.setHotWaterUsage( entity.getHotWaterUsage() );
         utilityReadingDto.setMeterReader( entity.getMeterReader() );
+        utilityReadingDto.setReadingType( entity.getReadingType() );
+        utilityReadingDto.setReadingStatus( entity.getReadingStatus() );
         utilityReadingDto.setNotes( entity.getNotes() );
         List<String> list = entity.getPhotos();
         if ( list != null ) {
             utilityReadingDto.setPhotos( new ArrayList<String>( list ) );
         }
-        utilityReadingDto.setReadingDate( entity.getReadingDate() );
-        utilityReadingDto.setReadingStatus( entity.getReadingStatus() );
-        utilityReadingDto.setReadingTime( entity.getReadingTime() );
-        utilityReadingDto.setReadingType( entity.getReadingType() );
-        utilityReadingDto.setRoomId( entity.getRoomId() );
+        utilityReadingDto.setCreatedBy( entity.getCreatedBy() );
+        utilityReadingDto.setCreatedAt( entity.getCreatedAt() );
         utilityReadingDto.setUpdatedAt( entity.getUpdatedAt() );
-        utilityReadingDto.setWaterPreviousReading( entity.getWaterPreviousReading() );
-        utilityReadingDto.setWaterReading( entity.getWaterReading() );
-        utilityReadingDto.setWaterUsage( entity.getWaterUsage() );
 
         return utilityReadingDto;
     }

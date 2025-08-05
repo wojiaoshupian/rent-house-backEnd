@@ -22,6 +22,8 @@ public class RoomMapper {
         dto.setWaterUnitPrice(room.getWaterUnitPrice());
         dto.setHotWaterUnitPrice(room.getHotWaterUnitPrice());
         dto.setBuildingId(room.getBuildingId());
+        dto.setRentalStatus(room.getRentalStatus());
+        dto.setRentalStatusDescription(room.getRentalStatus() != null ? room.getRentalStatus().getDescription() : null);
         dto.setCreatedBy(room.getCreatedBy());
         dto.setCreatedAt(room.getCreatedAt());
         dto.setUpdatedAt(room.getUpdatedAt());
@@ -102,6 +104,10 @@ public class RoomMapper {
         
         if (roomDto.getBuildingId() != null) {
             room.setBuildingId(roomDto.getBuildingId());
+        }
+
+        if (roomDto.getRentalStatus() != null) {
+            room.setRentalStatus(roomDto.getRentalStatus());
         }
     }
 }

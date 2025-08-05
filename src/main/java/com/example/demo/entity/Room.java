@@ -48,6 +48,33 @@ public class Room {
     @NotNull(message = "楼宇ID不能为空")
     @Column(name = "building_id", nullable = false)
     private Long buildingId;
+
+    /**
+     * 出租状态
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rental_status", nullable = false)
+    private RentalStatus rentalStatus = RentalStatus.VACANT;
+
+    /**
+     * 出租状态枚举
+     */
+    public enum RentalStatus {
+        VACANT("空置"),
+        RENTED("已出租"),
+        MAINTENANCE("维修中"),
+        RESERVED("已预订");
+
+        private final String description;
+
+        RentalStatus(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
     
     // 楼宇实体关联 - 多对一关系（暂时注释掉外键约束）
     // @ManyToOne(fetch = FetchType.LAZY)
@@ -102,6 +129,9 @@ public class Room {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public RentalStatus getRentalStatus() { return rentalStatus; }
+    public void setRentalStatus(RentalStatus rentalStatus) { this.rentalStatus = rentalStatus; }
     
     /**
      * 获取有效的电费单价（如果房间设置了则使用房间的，否则返回null，由服务层处理）

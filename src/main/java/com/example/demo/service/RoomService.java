@@ -9,6 +9,9 @@ import com.example.demo.repository.RoomRepository;
 import com.example.demo.repository.BuildingRepository;
 import com.example.demo.repository.UserBuildingRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.repository.EstimatedBillRepository;
+import com.example.demo.repository.ActualBillRepository;
+import com.example.demo.repository.UtilityReadingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +41,15 @@ public class RoomService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private EstimatedBillRepository estimatedBillRepository;
+
+    @Autowired
+    private ActualBillRepository actualBillRepository;
+
+    @Autowired
+    private UtilityReadingRepository utilityReadingRepository;
 
     @Autowired
     private RoomMapper roomMapper;
@@ -206,8 +218,42 @@ public class RoomService {
             throw new RuntimeException("您没有权限删除该房间");
         }
 
+        // 检查并删除相关数据
+        deleteRoomRelatedData(id);
+
+        // 删除房间
         roomRepository.delete(room);
         log.info("房间删除成功: {}", room.getRoomNumber());
+    }
+
+    /**
+     * 删除房间相关数据
+     */
+    private void deleteRoomRelatedData(Long roomId) {
+        log.info("开始删除房间 {} 的相关数据", roomId);
+
+        // 删除水电表记录（先删除，因为可能有外键约束问题）
+        long utilityReadingCount = utilityReadingRepository.countByRoomId(roomId);
+        if (utilityReadingCount > 0) {
+            utilityReadingRepository.deleteByRoomId(roomId);
+            log.info("删除房间 {} 的水电表记录 {} 条", roomId, utilityReadingCount);
+        }
+
+        // 删除预估账单
+        long estimatedBillCount = estimatedBillRepository.countByRoomId(roomId);
+        if (estimatedBillCount > 0) {
+            estimatedBillRepository.deleteByRoomId(roomId);
+            log.info("删除房间 {} 的预估账单 {} 条", roomId, estimatedBillCount);
+        }
+
+        // 删除实际账单
+        long actualBillCount = actualBillRepository.countByRoomId(roomId);
+        if (actualBillCount > 0) {
+            actualBillRepository.deleteByRoomId(roomId);
+            log.info("删除房间 {} 的实际账单 {} 条", roomId, actualBillCount);
+        }
+
+        log.info("房间 {} 的相关数据删除完成", roomId);
     }
 
     /**
@@ -233,5 +279,39 @@ public class RoomService {
      */
     public long countRoomsByBuildingId(Long buildingId) {
         return roomRepository.countByBuildingId(buildingId);
+    }
+
+    /**
+     * 更新房间出租状态
+     */
+    @CacheEvict(value = {"rooms", "buildings"}, allEntries = true)
+    @Transactional
+    public RoomDto updateRoomRentalStatus(Long id, Room.RentalStatus rentalStatus, Long userId) {
+        log.info("更新房间出租状态: {}, 新状态: {}, 用户ID: {}", id, rentalStatus, userId);
+
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("房间不存在"));
+
+        // 验证用户是否有权限操作该楼宇
+        if (!userBuildingRepository.existsByUserIdAndBuildingId(userId, room.getBuildingId())) {
+            throw new RuntimeException("您没有权限修改该房间的出租状态");
+        }
+
+        // 更新出租状态
+        room.setRentalStatus(rentalStatus);
+        room.setUpdatedAt(LocalDateTime.now());
+
+        Room savedRoom = roomRepository.save(room);
+        log.info("房间出租状态更新成功: {}", savedRoom.getRoomNumber());
+
+        // 转换为DTO并返回
+        Building building = buildingRepository.findById(savedRoom.getBuildingId()).orElse(null);
+        RoomDto dto = roomMapper.toDtoWithBuilding(savedRoom, building);
+
+        // 设置创建者用户名
+        userRepository.findById(savedRoom.getCreatedBy())
+                .ifPresent(user -> dto.setCreatedByUsername(user.getUsername()));
+
+        return dto;
     }
 }

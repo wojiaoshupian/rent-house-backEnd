@@ -22,6 +22,17 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     List<Room> findByCreatedBy(Long createdBy);
 
     /**
+     * 根据出租状态查找房间
+     */
+    List<Room> findByRentalStatus(Room.RentalStatus rentalStatus);
+
+    /**
+     * 查找已出租的房间
+     */
+    @Query("SELECT r FROM Room r WHERE r.rentalStatus = 'RENTED'")
+    List<Room> findRentedRooms();
+
+    /**
      * 检查房号在指定楼宇中是否已存在
      */
     boolean existsByRoomNumberAndBuildingId(String roomNumber, Long buildingId);

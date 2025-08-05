@@ -152,4 +152,14 @@ public interface UtilityReadingRepository extends JpaRepository<UtilityReading, 
     List<UtilityReading> findAbnormalReadings(@Param("roomId") Long roomId,
                                              @Param("electricityThreshold") Double electricityThreshold,
                                              @Param("waterThreshold") Double waterThreshold);
+
+    /**
+     * 统计指定房间的抄表记录数量
+     */
+    long countByRoomId(Long roomId);
+
+    /**
+     * 删除指定房间的所有抄表记录
+     */
+    void deleteByRoomId(Long roomId);
 }

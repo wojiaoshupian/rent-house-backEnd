@@ -1,5 +1,6 @@
 package com.example.demo.dto;
 
+import com.example.demo.entity.Room;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -39,6 +40,10 @@ public class RoomDto {
     // 楼宇信息（用于显示）
     private String buildingName;
     private String landlordName;
+
+    // 出租状态
+    private Room.RentalStatus rentalStatus;
+    private String rentalStatusDescription;
     
     // 有效的费用单价（计算后的值，用于前端显示）
     private BigDecimal effectiveElectricityUnitPrice;
@@ -83,6 +88,12 @@ public class RoomDto {
     
     public String getLandlordName() { return landlordName; }
     public void setLandlordName(String landlordName) { this.landlordName = landlordName; }
+
+    public Room.RentalStatus getRentalStatus() { return rentalStatus; }
+    public void setRentalStatus(Room.RentalStatus rentalStatus) { this.rentalStatus = rentalStatus; }
+
+    public String getRentalStatusDescription() { return rentalStatusDescription; }
+    public void setRentalStatusDescription(String rentalStatusDescription) { this.rentalStatusDescription = rentalStatusDescription; }
     
     public BigDecimal getEffectiveElectricityUnitPrice() { return effectiveElectricityUnitPrice; }
     public void setEffectiveElectricityUnitPrice(BigDecimal effectiveElectricityUnitPrice) { this.effectiveElectricityUnitPrice = effectiveElectricityUnitPrice; }
