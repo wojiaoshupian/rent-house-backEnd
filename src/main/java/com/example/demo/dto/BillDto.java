@@ -1,180 +1,54 @@
-package com.example.demo.entity;
+package com.example.demo.dto;
 
-import jakarta.persistence.*;
+import com.example.demo.entity.Bill;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 预估收费账单实体
+ * 账单DTO
  */
-@Entity
-@Table(name = "estimated_bills")
-public class EstimatedBill {
+public class BillDto {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    /**
-     * 房间ID
-     */
-    @Column(name = "room_id", nullable = false)
     private Long roomId;
-
-    /**
-     * 账单年月 (格式: YYYY-MM)
-     */
-    @Column(name = "bill_month", nullable = false, length = 7)
+    private String roomNumber;
+    private String buildingName;
     private String billMonth;
 
-    /**
-     * 账单生成日期
-     */
-    @Column(name = "bill_date", nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate billDate;
 
-    /**
-     * 房租
-     */
-    @Column(name = "rent", precision = 10, scale = 2)
     private BigDecimal rent;
-
-    /**
-     * 押金
-     */
-    @Column(name = "deposit", precision = 10, scale = 2)
     private BigDecimal deposit;
-
-    /**
-     * 电费单价
-     */
-    @Column(name = "electricity_unit_price", precision = 8, scale = 4)
     private BigDecimal electricityUnitPrice;
-
-    /**
-     * 电费用量
-     */
-    @Column(name = "electricity_usage", precision = 10, scale = 2)
     private BigDecimal electricityUsage;
-
-    /**
-     * 电费金额
-     */
-    @Column(name = "electricity_amount", precision = 10, scale = 2)
     private BigDecimal electricityAmount;
-
-    /**
-     * 水费单价
-     */
-    @Column(name = "water_unit_price", precision = 8, scale = 4)
     private BigDecimal waterUnitPrice;
-
-    /**
-     * 水费用量
-     */
-    @Column(name = "water_usage", precision = 10, scale = 2)
     private BigDecimal waterUsage;
-
-    /**
-     * 水费金额
-     */
-    @Column(name = "water_amount", precision = 10, scale = 2)
     private BigDecimal waterAmount;
-
-    /**
-     * 热水费单价
-     */
-    @Column(name = "hot_water_unit_price", precision = 8, scale = 4)
     private BigDecimal hotWaterUnitPrice;
-
-    /**
-     * 热水费用量
-     */
-    @Column(name = "hot_water_usage", precision = 10, scale = 2)
     private BigDecimal hotWaterUsage;
-
-    /**
-     * 热水费金额
-     */
-    @Column(name = "hot_water_amount", precision = 10, scale = 2)
     private BigDecimal hotWaterAmount;
-
-    /**
-     * 其他费用
-     */
-    @Column(name = "other_fees", precision = 10, scale = 2)
     private BigDecimal otherFees;
-
-    /**
-     * 其他费用说明
-     */
-    @Column(name = "other_fees_description", columnDefinition = "TEXT")
     private String otherFeesDescription;
-
-    /**
-     * 总金额
-     */
-    @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
-
-    /**
-     * 账单状态
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "bill_status")
-    private BillStatus billStatus = BillStatus.GENERATED;
-
-    /**
-     * 备注
-     */
-    @Column(name = "notes", columnDefinition = "TEXT")
+    private Bill.BillStatus billStatus;
+    private String billStatusDescription;
     private String notes;
-
-    /**
-     * 创建人
-     */
-    @Column(name = "created_by")
     private Long createdBy;
+    private String createdByUsername;
 
-    /**
-     * 创建时间
-     */
-    @Column(name = "created_at", nullable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
-    /**
-     * 更新时间
-     */
-    @Column(name = "updated_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
-    /**
-     * 账单状态枚举
-     */
-    public enum BillStatus {
-        GENERATED("已生成"),
-        CONFIRMED("已确认"),
-        SENT("已发送"),
-        PAID("已支付"),
-        OVERDUE("已逾期"),
-        CANCELLED("已取消");
-
-        private final String description;
-
-        BillStatus(String description) {
-            this.description = description;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-    }
-
     // 构造函数
-    public EstimatedBill() {
-        this.createdAt = LocalDateTime.now();
-    }
+    public BillDto() {}
 
     // Getter和Setter方法
     public Long getId() { return id; }
@@ -182,6 +56,12 @@ public class EstimatedBill {
 
     public Long getRoomId() { return roomId; }
     public void setRoomId(Long roomId) { this.roomId = roomId; }
+
+    public String getRoomNumber() { return roomNumber; }
+    public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
+
+    public String getBuildingName() { return buildingName; }
+    public void setBuildingName(String buildingName) { this.buildingName = buildingName; }
 
     public String getBillMonth() { return billMonth; }
     public void setBillMonth(String billMonth) { this.billMonth = billMonth; }
@@ -231,8 +111,11 @@ public class EstimatedBill {
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
 
-    public BillStatus getBillStatus() { return billStatus; }
-    public void setBillStatus(BillStatus billStatus) { this.billStatus = billStatus; }
+    public Bill.BillStatus getBillStatus() { return billStatus; }
+    public void setBillStatus(Bill.BillStatus billStatus) { this.billStatus = billStatus; }
+
+    public String getBillStatusDescription() { return billStatusDescription; }
+    public void setBillStatusDescription(String billStatusDescription) { this.billStatusDescription = billStatusDescription; }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
@@ -240,14 +123,12 @@ public class EstimatedBill {
     public Long getCreatedBy() { return createdBy; }
     public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }
 
+    public String getCreatedByUsername() { return createdByUsername; }
+    public void setCreatedByUsername(String createdByUsername) { this.createdByUsername = createdByUsername; }
+
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

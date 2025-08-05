@@ -1,77 +1,186 @@
-package com.example.demo.dto;
+package com.example.demo.entity;
 
-import com.example.demo.entity.ActualBill;
-import com.fasterxml.jackson.annotation.JsonFormat;
-
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 实际收费账单DTO
+ * 账单实体
  */
-public class ActualBillDto {
+@Entity
+@Table(name = "estimated_bills")
+public class Bill {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long estimatedBillId;
+
+    /**
+     * 房间ID
+     */
+    @Column(name = "room_id", nullable = false)
     private Long roomId;
-    private String roomNumber;
-    private String buildingName;
+
+    /**
+     * 账单年月 (格式: YYYY-MM)
+     */
+    @Column(name = "bill_month", nullable = false, length = 7)
     private String billMonth;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    /**
+     * 账单生成日期
+     */
+    @Column(name = "bill_date", nullable = false)
     private LocalDate billDate;
 
+    /**
+     * 房租
+     */
+    @Column(name = "rent", precision = 10, scale = 2)
     private BigDecimal rent;
+
+    /**
+     * 押金
+     */
+    @Column(name = "deposit", precision = 10, scale = 2)
     private BigDecimal deposit;
+
+    /**
+     * 电费单价
+     */
+    @Column(name = "electricity_unit_price", precision = 8, scale = 4)
     private BigDecimal electricityUnitPrice;
+
+    /**
+     * 电费用量
+     */
+    @Column(name = "electricity_usage", precision = 10, scale = 2)
     private BigDecimal electricityUsage;
+
+    /**
+     * 电费金额
+     */
+    @Column(name = "electricity_amount", precision = 10, scale = 2)
     private BigDecimal electricityAmount;
+
+    /**
+     * 水费单价
+     */
+    @Column(name = "water_unit_price", precision = 8, scale = 4)
     private BigDecimal waterUnitPrice;
+
+    /**
+     * 水费用量
+     */
+    @Column(name = "water_usage", precision = 10, scale = 2)
     private BigDecimal waterUsage;
+
+    /**
+     * 水费金额
+     */
+    @Column(name = "water_amount", precision = 10, scale = 2)
     private BigDecimal waterAmount;
+
+    /**
+     * 热水费单价
+     */
+    @Column(name = "hot_water_unit_price", precision = 8, scale = 4)
     private BigDecimal hotWaterUnitPrice;
+
+    /**
+     * 热水费用量
+     */
+    @Column(name = "hot_water_usage", precision = 10, scale = 2)
     private BigDecimal hotWaterUsage;
+
+    /**
+     * 热水费金额
+     */
+    @Column(name = "hot_water_amount", precision = 10, scale = 2)
     private BigDecimal hotWaterAmount;
+
+    /**
+     * 其他费用
+     */
+    @Column(name = "other_fees", precision = 10, scale = 2)
     private BigDecimal otherFees;
+
+    /**
+     * 其他费用说明
+     */
+    @Column(name = "other_fees_description", columnDefinition = "TEXT")
     private String otherFeesDescription;
+
+    /**
+     * 总金额
+     */
+    @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
-    private ActualBill.BillStatus billStatus;
-    private String billStatusDescription;
-    private ActualBill.PaymentStatus paymentStatus;
-    private String paymentStatusDescription;
 
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate paymentDate;
+    /**
+     * 账单状态
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "bill_status")
+    private BillStatus billStatus = BillStatus.GENERATED;
 
-    private String paymentMethod;
+    /**
+     * 备注
+     */
+    @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+
+    /**
+     * 创建人
+     */
+    @Column(name = "created_by")
     private Long createdBy;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    /**
+     * 创建时间
+     */
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    /**
+     * 更新时间
+     */
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    /**
+     * 账单状态枚举
+     */
+    public enum BillStatus {
+        GENERATED("已生成"),
+        CONFIRMED("已确认"),
+        SENT("已发送"),
+        PAID("已支付"),
+        CANCELLED("已取消");
+
+        private final String description;
+
+        BillStatus(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
     // 构造函数
-    public ActualBillDto() {}
+    public Bill() {
+        this.createdAt = LocalDateTime.now();
+    }
 
     // Getter和Setter方法
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Long getEstimatedBillId() { return estimatedBillId; }
-    public void setEstimatedBillId(Long estimatedBillId) { this.estimatedBillId = estimatedBillId; }
-
     public Long getRoomId() { return roomId; }
     public void setRoomId(Long roomId) { this.roomId = roomId; }
-
-    public String getRoomNumber() { return roomNumber; }
-    public void setRoomNumber(String roomNumber) { this.roomNumber = roomNumber; }
-
-    public String getBuildingName() { return buildingName; }
-    public void setBuildingName(String buildingName) { this.buildingName = buildingName; }
 
     public String getBillMonth() { return billMonth; }
     public void setBillMonth(String billMonth) { this.billMonth = billMonth; }
@@ -121,23 +230,8 @@ public class ActualBillDto {
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
 
-    public ActualBill.BillStatus getBillStatus() { return billStatus; }
-    public void setBillStatus(ActualBill.BillStatus billStatus) { this.billStatus = billStatus; }
-
-    public String getBillStatusDescription() { return billStatusDescription; }
-    public void setBillStatusDescription(String billStatusDescription) { this.billStatusDescription = billStatusDescription; }
-
-    public ActualBill.PaymentStatus getPaymentStatus() { return paymentStatus; }
-    public void setPaymentStatus(ActualBill.PaymentStatus paymentStatus) { this.paymentStatus = paymentStatus; }
-
-    public String getPaymentStatusDescription() { return paymentStatusDescription; }
-    public void setPaymentStatusDescription(String paymentStatusDescription) { this.paymentStatusDescription = paymentStatusDescription; }
-
-    public LocalDate getPaymentDate() { return paymentDate; }
-    public void setPaymentDate(LocalDate paymentDate) { this.paymentDate = paymentDate; }
-
-    public String getPaymentMethod() { return paymentMethod; }
-    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+    public BillStatus getBillStatus() { return billStatus; }
+    public void setBillStatus(BillStatus billStatus) { this.billStatus = billStatus; }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
@@ -150,4 +244,9 @@ public class ActualBillDto {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }

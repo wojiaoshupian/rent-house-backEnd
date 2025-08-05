@@ -1,44 +1,42 @@
 package com.example.demo.service;
 
-import com.example.demo.dto.EstimatedBillDto;
-import com.example.demo.entity.EstimatedBill;
-import com.example.demo.entity.Room;
+import com.example.demo.entity.Bill;
 import com.example.demo.entity.Building;
+import com.example.demo.entity.Room;
 import com.example.demo.entity.UtilityReading;
-import com.example.demo.repository.EstimatedBillRepository;
-import com.example.demo.repository.RoomRepository;
+import com.example.demo.dto.BillDto;
+import com.example.demo.repository.BillRepository;
 import com.example.demo.repository.BuildingRepository;
+import com.example.demo.repository.RoomRepository;
 import com.example.demo.repository.UtilityReadingRepository;
+import com.example.demo.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
- * 预估收费账单服务
+ * 账单Service
  */
 @Service
 @Transactional
-public class EstimatedBillService {
+public class BillService {
 
-    private static final Logger log = LoggerFactory.getLogger(EstimatedBillService.class);
+    private static final Logger log = LoggerFactory.getLogger(BillService.class);
 
     @Autowired
-    private EstimatedBillRepository estimatedBillRepository;
+    private BillRepository billRepository;
 
     @Autowired
     private RoomRepository roomRepository;
@@ -49,51 +47,19 @@ public class EstimatedBillService {
     @Autowired
     private UtilityReadingRepository utilityReadingRepository;
 
-    /**
-     * 每月1号自动生成预估账单
-     * cron表达式: 秒 分 时 日 月 周
-     * 0 0 2 1 * ? 表示每月1号凌晨2点执行
-     */
-    @Scheduled(cron = "0 0 2 1 * ?")
-    public void generateMonthlyEstimatedBills() {
-        log.info("开始生成月度预估账单...");
-        
-        LocalDate now = LocalDate.now();
-        String billMonth = now.format(DateTimeFormatter.ofPattern("yyyy-MM"));
-        
-        try {
-            // 只获取已出租的房间
-            List<Room> rentedRooms = roomRepository.findRentedRooms();
-            int generatedCount = 0;
-
-            log.info("找到 {} 个已出租的房间", rentedRooms.size());
-
-            for (Room room : rentedRooms) {
-                // 检查是否已存在该月份的账单
-                if (!estimatedBillRepository.existsByRoomIdAndBillMonth(room.getId(), billMonth)) {
-                    generateEstimatedBillForRoom(room.getId(), billMonth, 1L);
-                    generatedCount++;
-                    log.debug("为房间 {} ({}) 生成了预估账单", room.getId(), room.getRoomNumber());
-                } else {
-                    log.debug("房间 {} ({}) 的 {} 月份账单已存在，跳过", room.getId(), room.getRoomNumber(), billMonth);
-                }
-            }
-            
-            log.info("月度预估账单生成完成，共生成 {} 张账单", generatedCount);
-        } catch (Exception e) {
-            log.error("生成月度预估账单失败", e);
-        }
-    }
+    @Autowired
+    private UserRepository userRepository;
 
     /**
-     * 为指定房间生成预估账单
+     * 为指定房间生成账单
      */
-    public EstimatedBillDto generateEstimatedBillForRoom(Long roomId, String billMonth, Long userId) {
-        log.info("为房间 {} 生成 {} 月份的预估账单", roomId, billMonth);
+    @CacheEvict(value = {"bills", "rooms"}, allEntries = true)
+    public BillDto generateBillForRoom(Long roomId, String billMonth, Long userId) {
+        log.info("为房间 {} 生成 {} 月份的账单", roomId, billMonth);
 
-        // 检查是否已存在
-        if (estimatedBillRepository.existsByRoomIdAndBillMonth(roomId, billMonth)) {
-            throw new RuntimeException("该房间在指定月份的预估账单已存在");
+        // 检查是否已存在账单
+        if (billRepository.existsByRoomIdAndBillMonth(roomId, billMonth)) {
+            throw new RuntimeException("该房间在指定月份的账单已存在");
         }
 
         // 获取房间信息
@@ -109,7 +75,7 @@ public class EstimatedBillService {
         Building building = buildingRepository.findById(room.getBuildingId())
                 .orElseThrow(() -> new RuntimeException("楼宇信息不存在"));
 
-        EstimatedBill bill = new EstimatedBill();
+        Bill bill = new Bill();
         bill.setRoomId(roomId);
         bill.setBillMonth(billMonth);
         bill.setBillDate(LocalDate.now());
@@ -120,11 +86,11 @@ public class EstimatedBillService {
         bill.setDeposit(BigDecimal.ZERO); // 押金通常只在首月收取
 
         // 从房间或楼宇信息获取水电费单价（优先使用房间设置，如果没有则使用楼宇设置）
-        bill.setElectricityUnitPrice(room.getElectricityUnitPrice() != null ?
+        bill.setElectricityUnitPrice(room.getElectricityUnitPrice() != null ? 
             room.getElectricityUnitPrice() : building.getElectricityUnitPrice());
-        bill.setWaterUnitPrice(room.getWaterUnitPrice() != null ?
+        bill.setWaterUnitPrice(room.getWaterUnitPrice() != null ? 
             room.getWaterUnitPrice() : building.getWaterUnitPrice());
-        bill.setHotWaterUnitPrice(room.getHotWaterUnitPrice() != null ?
+        bill.setHotWaterUnitPrice(room.getHotWaterUnitPrice() != null ? 
             room.getHotWaterUnitPrice() : building.getHotWaterUnitPrice());
 
         // 计算水电费用量和金额
@@ -135,19 +101,25 @@ public class EstimatedBillService {
         bill.setOtherFeesDescription("");
 
         // 计算总金额
-        calculateTotalAmount(bill);
+        BigDecimal totalAmount = bill.getRent()
+                .add(bill.getDeposit())
+                .add(bill.getElectricityAmount())
+                .add(bill.getWaterAmount())
+                .add(bill.getHotWaterAmount())
+                .add(bill.getOtherFees());
+        bill.setTotalAmount(totalAmount);
 
         // 保存账单
-        EstimatedBill savedBill = estimatedBillRepository.save(bill);
-        
-        log.info("预估账单生成成功，账单ID: {}", savedBill.getId());
+        Bill savedBill = billRepository.save(bill);
+        log.info("账单生成成功，账单ID: {}", savedBill.getId());
+
         return convertToDto(savedBill);
     }
 
     /**
      * 计算水电费用量和金额
      */
-    private void calculateUtilityUsageAndAmount(EstimatedBill bill, Long roomId, String billMonth) {
+    private void calculateUtilityUsageAndAmount(Bill bill, Long roomId, String billMonth) {
         // 获取当月最新的水电表读数
         List<UtilityReading> currentMonthReadings = utilityReadingRepository
                 .findByRoomIdAndReadingDateBetweenOrderByReadingDateDescReadingTimeDesc(roomId,
@@ -165,22 +137,22 @@ public class EstimatedBillService {
         if (!currentMonthReadings.isEmpty()) {
             // 获取当月最新的抄表记录（第一个，因为已按日期倒序排列）
             UtilityReading currentReading = currentMonthReadings.get(0);
-
+            
             if (!lastMonthReadings.isEmpty()) {
                 // 获取上月最新的抄表记录（第一个，因为已按日期倒序排列）
                 UtilityReading lastReading = lastMonthReadings.get(0);
-
+                
                 // 计算用量：当月读数 - 上月读数
                 BigDecimal electricityUsage = currentReading.getElectricityReading().subtract(lastReading.getElectricityReading());
                 BigDecimal waterUsage = currentReading.getWaterReading().subtract(lastReading.getWaterReading());
                 BigDecimal hotWaterUsage = currentReading.getHotWaterReading().subtract(lastReading.getHotWaterReading());
-
+                
                 // 确保用量不为负数（防止抄表错误）
                 bill.setElectricityUsage(electricityUsage.max(BigDecimal.ZERO));
                 bill.setWaterUsage(waterUsage.max(BigDecimal.ZERO));
                 bill.setHotWaterUsage(hotWaterUsage.max(BigDecimal.ZERO));
-
-                log.info("房间 {} 在 {} 月份计算用量：电 {} 度，水 {} 吨，热水 {} 吨",
+                
+                log.info("房间 {} 在 {} 月份计算用量：电 {} 度，水 {} 吨，热水 {} 吨", 
                     roomId, billMonth, electricityUsage, waterUsage, hotWaterUsage);
             } else {
                 // 只有当月抄表记录，没有上月记录，用量设为0
@@ -204,74 +176,83 @@ public class EstimatedBillService {
     }
 
     /**
-     * 计算总金额
+     * 分页查询账单
      */
-    private void calculateTotalAmount(EstimatedBill bill) {
-        BigDecimal total = BigDecimal.ZERO;
-        
-        if (bill.getRent() != null) total = total.add(bill.getRent());
-        if (bill.getDeposit() != null) total = total.add(bill.getDeposit());
-        if (bill.getElectricityAmount() != null) total = total.add(bill.getElectricityAmount());
-        if (bill.getWaterAmount() != null) total = total.add(bill.getWaterAmount());
-        if (bill.getHotWaterAmount() != null) total = total.add(bill.getHotWaterAmount());
-        if (bill.getOtherFees() != null) total = total.add(bill.getOtherFees());
-        
-        bill.setTotalAmount(total.setScale(2, RoundingMode.HALF_UP));
-    }
-
-    /**
-     * 分页查询预估账单
-     */
-    public Page<EstimatedBillDto> getEstimatedBills(Long roomId, String billMonth, 
-                                                   EstimatedBill.BillStatus billStatus,
-                                                   int page, int size) {
+    public Page<BillDto> getBills(Long roomId, String billMonth, 
+                                 Bill.BillStatus billStatus,
+                                 int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("billMonth").descending().and(Sort.by("roomId")));
-        Page<EstimatedBill> billPage = estimatedBillRepository.findBillsWithFilters(roomId, billMonth, billStatus, pageable);
+        Page<Bill> billPage = billRepository.findBillsWithFilters(roomId, billMonth, billStatus, pageable);
         
         return billPage.map(this::convertToDto);
     }
 
     /**
-     * 根据ID获取预估账单
+     * 根据ID获取账单
      */
-    public EstimatedBillDto getEstimatedBillById(Long id) {
-        EstimatedBill bill = estimatedBillRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("预估账单不存在"));
+    public BillDto getBillById(Long id) {
+        Bill bill = billRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("账单不存在"));
         return convertToDto(bill);
     }
 
     /**
-     * 更新预估账单状态
+     * 更新账单
      */
-    public EstimatedBillDto updateBillStatus(Long id, EstimatedBill.BillStatus status) {
-        EstimatedBill bill = estimatedBillRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("预估账单不存在"));
-        
-        bill.setBillStatus(status);
-        EstimatedBill savedBill = estimatedBillRepository.save(bill);
-        
-        log.info("预估账单状态更新成功，账单ID: {}, 新状态: {}", id, status);
+    @CacheEvict(value = {"bills", "rooms"}, allEntries = true)
+    public BillDto updateBill(Long id, BillDto billDto, Long userId) {
+        Bill bill = billRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("账单不存在"));
+
+        // 更新字段
+        if (billDto.getRent() != null) bill.setRent(billDto.getRent());
+        if (billDto.getDeposit() != null) bill.setDeposit(billDto.getDeposit());
+        if (billDto.getElectricityUsage() != null) bill.setElectricityUsage(billDto.getElectricityUsage());
+        if (billDto.getWaterUsage() != null) bill.setWaterUsage(billDto.getWaterUsage());
+        if (billDto.getHotWaterUsage() != null) bill.setHotWaterUsage(billDto.getHotWaterUsage());
+        if (billDto.getOtherFees() != null) bill.setOtherFees(billDto.getOtherFees());
+        if (billDto.getOtherFeesDescription() != null) bill.setOtherFeesDescription(billDto.getOtherFeesDescription());
+        if (billDto.getBillStatus() != null) bill.setBillStatus(billDto.getBillStatus());
+        if (billDto.getNotes() != null) bill.setNotes(billDto.getNotes());
+
+        // 重新计算金额
+        bill.setElectricityAmount(bill.getElectricityUsage().multiply(bill.getElectricityUnitPrice()).setScale(2, RoundingMode.HALF_UP));
+        bill.setWaterAmount(bill.getWaterUsage().multiply(bill.getWaterUnitPrice()).setScale(2, RoundingMode.HALF_UP));
+        bill.setHotWaterAmount(bill.getHotWaterUsage().multiply(bill.getHotWaterUnitPrice()).setScale(2, RoundingMode.HALF_UP));
+
+        // 重新计算总金额
+        BigDecimal totalAmount = bill.getRent()
+                .add(bill.getDeposit())
+                .add(bill.getElectricityAmount())
+                .add(bill.getWaterAmount())
+                .add(bill.getHotWaterAmount())
+                .add(bill.getOtherFees());
+        bill.setTotalAmount(totalAmount);
+
+        Bill savedBill = billRepository.save(bill);
+        log.info("账单更新成功，账单ID: {}", savedBill.getId());
+
         return convertToDto(savedBill);
     }
 
     /**
-     * 删除预估账单
+     * 删除账单
      */
-    public void deleteEstimatedBill(Long id) {
-        if (!estimatedBillRepository.existsById(id)) {
-            throw new RuntimeException("预估账单不存在");
+    @CacheEvict(value = {"bills", "rooms"}, allEntries = true)
+    public void deleteBill(Long id) {
+        if (!billRepository.existsById(id)) {
+            throw new RuntimeException("账单不存在");
         }
-        
-        estimatedBillRepository.deleteById(id);
-        log.info("预估账单删除成功，账单ID: {}", id);
+
+        billRepository.deleteById(id);
+        log.info("账单删除成功，账单ID: {}", id);
     }
 
     /**
      * 转换为DTO
      */
-    private EstimatedBillDto convertToDto(EstimatedBill bill) {
-        EstimatedBillDto dto = new EstimatedBillDto();
-        
+    private BillDto convertToDto(Bill bill) {
+        BillDto dto = new BillDto();
         dto.setId(bill.getId());
         dto.setRoomId(bill.getRoomId());
         dto.setBillMonth(bill.getBillMonth());
@@ -291,26 +272,25 @@ public class EstimatedBillService {
         dto.setOtherFeesDescription(bill.getOtherFeesDescription());
         dto.setTotalAmount(bill.getTotalAmount());
         dto.setBillStatus(bill.getBillStatus());
-        dto.setBillStatusDescription(bill.getBillStatus() != null ? bill.getBillStatus().getDescription() : null);
+        dto.setBillStatusDescription(bill.getBillStatus().getDescription());
         dto.setNotes(bill.getNotes());
         dto.setCreatedBy(bill.getCreatedBy());
         dto.setCreatedAt(bill.getCreatedAt());
         dto.setUpdatedAt(bill.getUpdatedAt());
 
-        // 设置房间和楼宇信息
-        if (bill.getRoomId() != null) {
-            Optional<Room> roomOpt = roomRepository.findById(bill.getRoomId());
-            if (roomOpt.isPresent()) {
-                Room room = roomOpt.get();
-                dto.setRoomNumber(room.getRoomNumber());
-                
-                if (room.getBuildingId() != null) {
-                    Optional<Building> buildingOpt = buildingRepository.findById(room.getBuildingId());
-                    if (buildingOpt.isPresent()) {
-                        dto.setBuildingName(buildingOpt.get().getBuildingName());
-                    }
-                }
-            }
+        // 获取房间和楼宇信息
+        roomRepository.findById(bill.getRoomId()).ifPresent(room -> {
+            dto.setRoomNumber(room.getRoomNumber());
+            buildingRepository.findById(room.getBuildingId()).ifPresent(building -> {
+                dto.setBuildingName(building.getBuildingName());
+            });
+        });
+
+        // 获取创建人用户名
+        if (bill.getCreatedBy() != null) {
+            userRepository.findById(bill.getCreatedBy()).ifPresent(user -> {
+                dto.setCreatedByUsername(user.getUsername());
+            });
         }
 
         return dto;

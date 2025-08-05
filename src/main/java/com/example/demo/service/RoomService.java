@@ -9,8 +9,7 @@ import com.example.demo.repository.RoomRepository;
 import com.example.demo.repository.BuildingRepository;
 import com.example.demo.repository.UserBuildingRepository;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.repository.EstimatedBillRepository;
-import com.example.demo.repository.ActualBillRepository;
+import com.example.demo.repository.BillRepository;
 import com.example.demo.repository.UtilityReadingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,10 +42,7 @@ public class RoomService {
     private UserRepository userRepository;
 
     @Autowired
-    private EstimatedBillRepository estimatedBillRepository;
-
-    @Autowired
-    private ActualBillRepository actualBillRepository;
+    private BillRepository billRepository;
 
     @Autowired
     private UtilityReadingRepository utilityReadingRepository;
@@ -239,18 +235,11 @@ public class RoomService {
             log.info("删除房间 {} 的水电表记录 {} 条", roomId, utilityReadingCount);
         }
 
-        // 删除预估账单
-        long estimatedBillCount = estimatedBillRepository.countByRoomId(roomId);
-        if (estimatedBillCount > 0) {
-            estimatedBillRepository.deleteByRoomId(roomId);
-            log.info("删除房间 {} 的预估账单 {} 条", roomId, estimatedBillCount);
-        }
-
-        // 删除实际账单
-        long actualBillCount = actualBillRepository.countByRoomId(roomId);
-        if (actualBillCount > 0) {
-            actualBillRepository.deleteByRoomId(roomId);
-            log.info("删除房间 {} 的实际账单 {} 条", roomId, actualBillCount);
+        // 删除账单
+        long billCount = billRepository.countByRoomId(roomId);
+        if (billCount > 0) {
+            billRepository.deleteByRoomId(roomId);
+            log.info("删除房间 {} 的账单 {} 条", roomId, billCount);
         }
 
         log.info("房间 {} 的相关数据删除完成", roomId);
