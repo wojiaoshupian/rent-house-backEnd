@@ -56,6 +56,11 @@ public class CreateUtilityReadingRequest {
     private UtilityReading.ReadingType readingType;
 
     /**
+     * 读数状态
+     */
+    private UtilityReading.ReadingStatus readingStatus;
+
+    /**
      * 备注信息
      */
     private String notes;
@@ -90,6 +95,9 @@ public class CreateUtilityReadingRequest {
 
     public UtilityReading.ReadingType getReadingType() { return readingType; }
     public void setReadingType(UtilityReading.ReadingType readingType) { this.readingType = readingType; }
+
+    public UtilityReading.ReadingStatus getReadingStatus() { return readingStatus; }
+    public void setReadingStatus(UtilityReading.ReadingStatus readingStatus) { this.readingStatus = readingStatus; }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }

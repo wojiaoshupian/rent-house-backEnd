@@ -194,6 +194,9 @@ public class UtilityReadingService {
         if (request.getReadingType() != null) {
             reading.setReadingType(request.getReadingType());
         }
+        if (request.getReadingStatus() != null) {
+            reading.setReadingStatus(request.getReadingStatus());
+        }
         if (request.getNotes() != null) {
             reading.setNotes(request.getNotes());
         }

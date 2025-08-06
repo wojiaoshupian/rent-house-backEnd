@@ -83,7 +83,10 @@ public class BillService {
 
         // 从房间信息获取房租和押金
         bill.setRent(room.getRent()); // 房租
-        bill.setDeposit(BigDecimal.ZERO); // 押金通常只在首月收取
+
+        // 押金处理逻辑：检查是否为该房间的首月账单
+        BigDecimal depositAmount = calculateDepositAmount(roomId, billMonth, room);
+        bill.setDeposit(depositAmount);
 
         // 从房间或楼宇信息获取水电费单价（优先使用房间设置，如果没有则使用楼宇设置）
         bill.setElectricityUnitPrice(room.getElectricityUnitPrice() != null ? 
@@ -246,6 +249,31 @@ public class BillService {
 
         billRepository.deleteById(id);
         log.info("账单删除成功，账单ID: {}", id);
+    }
+
+    /**
+     * 计算押金金额
+     * 规则：
+     * 1. 如果是该房间的第一张账单，收取押金
+     * 2. 如果不是第一张账单，押金为0
+     * 3. 可以通过更新接口手动调整押金
+     */
+    private BigDecimal calculateDepositAmount(Long roomId, String billMonth, Room room) {
+        // 检查该房间是否已有账单
+        long existingBillCount = billRepository.countByRoomId(roomId);
+
+        if (existingBillCount == 0) {
+            // 这是该房间的第一张账单，收取押金
+            BigDecimal depositAmount = room.getDefaultDeposit();
+            if (depositAmount != null && depositAmount.compareTo(BigDecimal.ZERO) > 0) {
+                log.info("房间 {} 首次生成账单，收取押金: {}", roomId, depositAmount);
+                return depositAmount;
+            }
+        }
+
+        // 不是首月账单或没有设置押金，押金为0
+        log.info("房间 {} 在 {} 月份不收取押金", roomId, billMonth);
+        return BigDecimal.ZERO;
     }
 
     /**
