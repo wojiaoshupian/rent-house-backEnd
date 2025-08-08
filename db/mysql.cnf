@@ -1,0 +1,90 @@
+# =====================================================
+# 房屋租赁管理系统 - MySQL配置文件
+# 版本: 1.0
+# 创建时间: 2025-08-06
+# 描述: 优化的MySQL配置，适用于生产环境
+# =====================================================
+
+[mysqld]
+# 基础设置
+user = mysql
+port = 3306
+bind-address = 0.0.0.0
+socket = /var/run/mysqld/mysqld.sock
+pid-file = /var/run/mysqld/mysqld.pid
+datadir = /var/lib/mysql
+tmpdir = /tmp
+
+# 字符集设置
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+init_connect = 'SET NAMES utf8mb4'
+
+# 时区设置
+default-time-zone = '+08:00'
+
+# SQL模式设置
+sql_mode = STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO
+
+# 连接设置
+max_connections = 200
+max_connect_errors = 1000
+connect_timeout = 30
+wait_timeout = 28800
+interactive_timeout = 28800
+
+# 缓冲区设置
+key_buffer_size = 256M
+max_allowed_packet = 64M
+table_open_cache = 2000
+sort_buffer_size = 2M
+read_buffer_size = 2M
+read_rnd_buffer_size = 8M
+myisam_sort_buffer_size = 64M
+thread_cache_size = 8
+tmp_table_size = 64M
+max_heap_table_size = 64M
+
+# InnoDB设置
+innodb_buffer_pool_size = 1G
+innodb_buffer_pool_instances = 4
+innodb_log_file_size = 256M
+innodb_log_buffer_size = 16M
+innodb_flush_log_at_trx_commit = 2
+innodb_lock_wait_timeout = 50
+innodb_file_per_table = 1
+innodb_open_files = 400
+innodb_io_capacity = 400
+innodb_flush_method = O_DIRECT
+
+# 查询缓存（MySQL 8.0已移除）
+# query_cache_type = 1
+# query_cache_size = 256M
+# query_cache_limit = 2M
+
+# 慢查询日志
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/mysql-slow.log
+long_query_time = 2
+log_queries_not_using_indexes = 1
+
+# 错误日志
+log_error = /var/log/mysql/error.log
+
+# 二进制日志
+log_bin = /var/log/mysql/mysql-bin.log
+binlog_format = ROW
+expire_logs_days = 7
+max_binlog_size = 100M
+
+# 安全设置
+skip_name_resolve = 1
+local_infile = 0
+
+[mysql]
+default-character-set = utf8mb4
+
+[client]
+default-character-set = utf8mb4
+port = 3306
+socket = /var/run/mysqld/mysqld.sock

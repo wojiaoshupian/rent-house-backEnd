@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-08-05T09:13:06+0800",
+    date = "2025-08-08T13:41:34+0800",
     comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.42.50.v20250729-0351, environment: Java 21.0.8 (Eclipse Adoptium)"
 )
 @Component
@@ -63,24 +63,24 @@ public class UtilityReadingMapperImpl implements UtilityReadingMapper {
 
         UtilityReading utilityReading = new UtilityReading();
 
-        utilityReading.setCreatedAt( dto.getCreatedAt() );
-        utilityReading.setCreatedBy( dto.getCreatedBy() );
-        utilityReading.setElectricityReading( dto.getElectricityReading() );
-        utilityReading.setHotWaterReading( dto.getHotWaterReading() );
         utilityReading.setId( dto.getId() );
+        utilityReading.setRoomId( dto.getRoomId() );
+        utilityReading.setReadingDate( dto.getReadingDate() );
+        utilityReading.setReadingTime( dto.getReadingTime() );
+        utilityReading.setElectricityReading( dto.getElectricityReading() );
+        utilityReading.setWaterReading( dto.getWaterReading() );
+        utilityReading.setHotWaterReading( dto.getHotWaterReading() );
         utilityReading.setMeterReader( dto.getMeterReader() );
+        utilityReading.setReadingType( dto.getReadingType() );
+        utilityReading.setReadingStatus( dto.getReadingStatus() );
         utilityReading.setNotes( dto.getNotes() );
         List<String> list = dto.getPhotos();
         if ( list != null ) {
             utilityReading.setPhotos( new ArrayList<String>( list ) );
         }
-        utilityReading.setReadingDate( dto.getReadingDate() );
-        utilityReading.setReadingStatus( dto.getReadingStatus() );
-        utilityReading.setReadingTime( dto.getReadingTime() );
-        utilityReading.setReadingType( dto.getReadingType() );
-        utilityReading.setRoomId( dto.getRoomId() );
+        utilityReading.setCreatedBy( dto.getCreatedBy() );
+        utilityReading.setCreatedAt( dto.getCreatedAt() );
         utilityReading.setUpdatedAt( dto.getUpdatedAt() );
-        utilityReading.setWaterReading( dto.getWaterReading() );
 
         return utilityReading;
     }

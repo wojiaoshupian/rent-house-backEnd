@@ -1,0 +1,121 @@
+# =====================================================
+# 房屋租赁管理系统 - Docker Compose配置
+# 版本: 1.0
+# 创建时间: 2025-08-06
+# 描述: 用于快速部署整个系统的Docker配置
+# =====================================================
+
+version: '3.8'
+
+services:
+  # MySQL数据库服务
+  mysql:
+    image: mysql:8.0
+    container_name: rent-house-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password_123
+      MYSQL_DATABASE: rent_house_management
+      MYSQL_USER: rent_app
+      MYSQL_PASSWORD: rent_app_password_123
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./:/docker-entrypoint-initdb.d/
+      - ./mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - rent-house-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Redis缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: rent-house-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - rent-house-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 10s
+      retries: 5
+
+  # Spring Boot应用服务
+  app:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    container_name: rent-house-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rent_house_management?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: rent_app
+      SPRING_DATASOURCE_PASSWORD: rent_app_password_123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      JWT_SECRET: your_production_jwt_secret_key_must_be_very_long_and_secure_for_production_use
+      TZ: Asia/Shanghai
+    volumes:
+      - app_logs:/app/logs
+      - app_uploads:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rent-house-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Nginx反向代理服务
+  nginx:
+    image: nginx:alpine
+    container_name: rent-house-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - rent-house-network
+
+# 数据卷定义
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_logs:
+    driver: local
+  app_uploads:
+    driver: local
+  nginx_logs:
+    driver: local
+
+# 网络定义
+networks:
+  rent-house-network:
+    driver: bridge
