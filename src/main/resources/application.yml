@@ -13,10 +13,10 @@ spring:
   
   # 数据库配置 - MySQL
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/spring_boot_demo?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&connectTimeout=30000&socketTimeout=60000
+    url: jdbc:mysql://127.0.0.1:3306/rent_house?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&connectTimeout=30000&socketTimeout=60000
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: 12345678
+    username: rent_house
+    password: Qwesdx1245@
     hikari:
       connection-timeout: 30000
       idle-timeout: 600000

@@ -20,32 +20,32 @@ SELECT '数据库部署完成！' AS message;
 SELECT 'Database deployment completed!' AS message;
 
 -- 显示数据库统计信息
-USE `rent_house_management`;
+USE `rent_house`;
 
 SELECT 
     'Tables' AS type,
     COUNT(*) AS count
 FROM information_schema.tables 
-WHERE table_schema = 'rent_house_management'
+WHERE table_schema = 'rent_house'
 UNION ALL
 SELECT 
     'Views' AS type,
     COUNT(*) AS count
 FROM information_schema.views 
-WHERE table_schema = 'rent_house_management'
+WHERE table_schema = 'rent_house'
 UNION ALL
 SELECT 
     'Procedures' AS type,
     COUNT(*) AS count
 FROM information_schema.routines 
-WHERE routine_schema = 'rent_house_management' 
+WHERE routine_schema = 'rent_house' 
   AND routine_type = 'PROCEDURE'
 UNION ALL
 SELECT 
     'Triggers' AS type,
     COUNT(*) AS count
 FROM information_schema.triggers 
-WHERE trigger_schema = 'rent_house_management';
+WHERE trigger_schema = 'rent_house';
 
 -- 显示初始用户信息
 SELECT 

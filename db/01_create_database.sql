@@ -6,12 +6,12 @@
 -- =====================================================
 
 -- 创建数据库（如果不存在）
-CREATE DATABASE IF NOT EXISTS `rent_house_management` 
-DEFAULT CHARACTER SET utf8mb4 
+CREATE DATABASE IF NOT EXISTS `rent_house`
+DEFAULT CHARACTER SET utf8mb4
 DEFAULT COLLATE utf8mb4_unicode_ci;
 
 -- 使用数据库
-USE `rent_house_management`;
+USE `rent_house`;
 
 -- 设置时区
 SET time_zone = '+08:00';
