@@ -52,9 +52,8 @@ public class Room {
     /**
      * 出租状态
      */
-    @Enumerated(EnumType.STRING)
     @Column(name = "rental_status", nullable = false)
-    private RentalStatus rentalStatus = RentalStatus.VACANT;
+    private String rentalStatus = RentalStatus.VACANT.name();
 
     /**
      * 出租状态枚举
@@ -130,8 +129,12 @@ public class Room {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public RentalStatus getRentalStatus() { return rentalStatus; }
-    public void setRentalStatus(RentalStatus rentalStatus) { this.rentalStatus = rentalStatus; }
+    public RentalStatus getRentalStatus() { 
+        return RentalStatus.valueOf(rentalStatus); 
+    }
+    public void setRentalStatus(RentalStatus rentalStatus) { 
+        this.rentalStatus = rentalStatus.name(); 
+    }
     
     /**
      * 获取有效的电费单价（如果房间设置了则使用房间的，否则返回null，由服务层处理）

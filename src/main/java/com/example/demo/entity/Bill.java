@@ -121,9 +121,8 @@ public class Bill {
     /**
      * 账单状态
      */
-    @Enumerated(EnumType.STRING)
     @Column(name = "bill_status")
-    private BillStatus billStatus = BillStatus.GENERATED;
+    private String billStatus = BillStatus.GENERATED.name();
 
     /**
      * 备注
@@ -230,8 +229,12 @@ public class Bill {
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
 
-    public BillStatus getBillStatus() { return billStatus; }
-    public void setBillStatus(BillStatus billStatus) { this.billStatus = billStatus; }
+    public BillStatus getBillStatus() { 
+        return BillStatus.valueOf(billStatus); 
+    }
+    public void setBillStatus(BillStatus billStatus) { 
+        this.billStatus = billStatus.name(); 
+    }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }

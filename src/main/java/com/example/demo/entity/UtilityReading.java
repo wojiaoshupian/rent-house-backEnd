@@ -2,8 +2,6 @@ package com.example.demo.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -140,16 +138,14 @@ public class UtilityReading {
     /**
      * 抄表类型
      */
-    @Enumerated(EnumType.STRING)
     @Column(name = "reading_type")
-    private ReadingType readingType = ReadingType.MANUAL;
+    private String readingType = ReadingType.MANUAL.name();
 
     /**
      * 读数状态
      */
-    @Enumerated(EnumType.STRING)
     @Column(name = "reading_status")
-    private ReadingStatus readingStatus = ReadingStatus.PENDING;
+    private String readingStatus = ReadingStatus.PENDING.name();
 
     /**
      * 备注信息
@@ -160,9 +156,8 @@ public class UtilityReading {
     /**
      * 抄表照片URL列表
      */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "photos", columnDefinition = "JSON")
-    private List<String> photos;
+    @Column(name = "photos", columnDefinition = "TEXT")
+    private String photos;
 
     // ==================== 关联关系 ====================
     
@@ -217,17 +212,25 @@ public class UtilityReading {
     public String getMeterReader() { return meterReader; }
     public void setMeterReader(String meterReader) { this.meterReader = meterReader; }
 
-    public ReadingType getReadingType() { return readingType; }
-    public void setReadingType(ReadingType readingType) { this.readingType = readingType; }
+    public ReadingType getReadingType() { 
+        return ReadingType.valueOf(readingType); 
+    }
+    public void setReadingType(ReadingType readingType) { 
+        this.readingType = readingType.name(); 
+    }
 
-    public ReadingStatus getReadingStatus() { return readingStatus; }
-    public void setReadingStatus(ReadingStatus readingStatus) { this.readingStatus = readingStatus; }
+    public ReadingStatus getReadingStatus() { 
+        return ReadingStatus.valueOf(readingStatus); 
+    }
+    public void setReadingStatus(ReadingStatus readingStatus) { 
+        this.readingStatus = readingStatus.name(); 
+    }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
 
-    public List<String> getPhotos() { return photos; }
-    public void setPhotos(List<String> photos) { this.photos = photos; }
+    public String getPhotos() { return photos; }
+    public void setPhotos(String photos) { this.photos = photos; }
 
     public Room getRoom() { return room; }
     public void setRoom(Room room) { this.room = room; }

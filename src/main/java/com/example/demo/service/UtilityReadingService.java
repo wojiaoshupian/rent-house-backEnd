@@ -3,13 +3,15 @@ package com.example.demo.service;
 import com.example.demo.dto.CreateUtilityReadingRequest;
 import com.example.demo.dto.UtilityReadingDto;
 import com.example.demo.dto.UtilityReadingQueryDto;
-import com.example.demo.entity.UtilityReading;
-import com.example.demo.entity.Room;
 import com.example.demo.entity.Building;
-// import com.example.demo.mapper.UtilityReadingMapper;
-import com.example.demo.repository.UtilityReadingRepository;
-import com.example.demo.repository.RoomRepository;
+import com.example.demo.entity.Room;
+import com.example.demo.entity.UtilityReading;
 import com.example.demo.repository.BuildingRepository;
+import com.example.demo.repository.RoomRepository;
+import com.example.demo.repository.UtilityReadingRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,8 +48,7 @@ public class UtilityReadingService {
     @Autowired
     private BuildingRepository buildingRepository;
 
-    // @Autowired
-    // private UtilityReadingMapper utilityReadingMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 创建水电表记录
@@ -55,18 +56,13 @@ public class UtilityReadingService {
     @CacheEvict(value = {"utilityReadings", "roomReadings"}, allEntries = true)
     @Transactional
     public UtilityReadingDto createReading(CreateUtilityReadingRequest request, Long userId) {
-        log.info("创建水电表记录，房间ID: {}, 抄表日期: {}", request.getRoomId(), request.getReadingDate());
+        log.info("创建水电表记录，房间ID: {}, 用户ID: {}", request.getRoomId(), userId);
 
-        // 验证房间是否存在 (暂时跳过，后续可以添加)
-        // Room room = roomRepository.findById(request.getRoomId())
-        //         .orElseThrow(() -> new RuntimeException("房间不存在"));
+        // 验证房间是否存在
+        Room room = roomRepository.findById(request.getRoomId())
+                .orElseThrow(() -> new RuntimeException("房间不存在"));
 
-        // 检查是否已有当天的记录
-        if (utilityReadingRepository.existsByRoomIdAndReadingDate(request.getRoomId(), request.getReadingDate())) {
-            throw new RuntimeException("该房间在指定日期已有抄表记录");
-        }
-
-        // 创建实体
+        // 创建水电表记录
         UtilityReading reading = new UtilityReading();
         reading.setRoomId(request.getRoomId());
         reading.setReadingDate(request.getReadingDate());
@@ -78,7 +74,7 @@ public class UtilityReadingService {
         reading.setReadingType(request.getReadingType() != null ? request.getReadingType() : UtilityReading.ReadingType.MANUAL);
         reading.setReadingStatus(UtilityReading.ReadingStatus.CONFIRMED); // 默认设置为已确认状态
         reading.setNotes(request.getNotes());
-        reading.setPhotos(request.getPhotos());
+        reading.setPhotos(convertPhotosToString(request.getPhotos()));
         reading.setCreatedBy(userId);
 
         // 保存记录（触发器会自动设置上次读数）
@@ -173,12 +169,18 @@ public class UtilityReadingService {
     @CacheEvict(value = {"utilityReadings", "roomReadings"}, allEntries = true)
     @Transactional
     public UtilityReadingDto updateReading(Long id, CreateUtilityReadingRequest request, Long userId) {
-        log.info("更新水电表记录，ID: {}", id);
+        log.info("更新水电表记录，ID: {}, 用户ID: {}", id, userId);
 
         UtilityReading reading = utilityReadingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("水电表记录不存在"));
 
-        // 更新字段（只更新非null的字段）
+        // 更新字段
+        if (request.getReadingDate() != null) {
+            reading.setReadingDate(request.getReadingDate());
+        }
+        if (request.getReadingTime() != null) {
+            reading.setReadingTime(request.getReadingTime());
+        }
         if (request.getElectricityReading() != null) {
             reading.setElectricityReading(request.getElectricityReading());
         }
@@ -188,7 +190,7 @@ public class UtilityReadingService {
         if (request.getHotWaterReading() != null) {
             reading.setHotWaterReading(request.getHotWaterReading());
         }
-        if (request.getMeterReader() != null && !request.getMeterReader().trim().isEmpty()) {
+        if (request.getMeterReader() != null) {
             reading.setMeterReader(request.getMeterReader());
         }
         if (request.getReadingType() != null) {
@@ -201,7 +203,7 @@ public class UtilityReadingService {
             reading.setNotes(request.getNotes());
         }
         if (request.getPhotos() != null) {
-            reading.setPhotos(request.getPhotos());
+            reading.setPhotos(convertPhotosToString(request.getPhotos()));
         }
 
         // 设置更新时间
@@ -312,7 +314,7 @@ public class UtilityReadingService {
         dto.setReadingStatus(entity.getReadingStatus());
         dto.setReadingStatusDescription(entity.getReadingStatus() != null ? entity.getReadingStatus().getDescription() : null);
         dto.setNotes(entity.getNotes());
-        dto.setPhotos(entity.getPhotos());
+        dto.setPhotos(convertStringToPhotos(entity.getPhotos()));
         dto.setCreatedBy(entity.getCreatedBy());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
@@ -348,5 +350,45 @@ public class UtilityReadingService {
         return entities.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * List<String>转String
+     */
+    private String convertPhotosToString(List<String> photos) {
+        if (photos == null || photos.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            return objectMapper.writeValueAsString(photos);
+        } catch (JsonProcessingException e) {
+            // 如果JSON序列化失败，使用逗号分隔
+            return String.join(",", photos);
+        }
+    }
+
+    /**
+     * String转List<String>
+     */
+    private List<String> convertStringToPhotos(String photos) {
+        if (photos == null || photos.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        try {
+            return objectMapper.readValue(photos, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException e) {
+            // 如果JSON解析失败，尝试按逗号分割
+            String[] parts = photos.split(",");
+            List<String> result = new ArrayList<>();
+            for (String part : parts) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty()) {
+                    result.add(trimmed);
+                }
+            }
+            return result;
+        }
     }
 }

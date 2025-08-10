@@ -36,6 +36,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.disable()) // 简化CORS配置
             .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/").permitAll() // 允许根路径匿名访问
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/buildings/**").permitAll() // 移除权限控制
                 .requestMatchers("/swagger-ui/**").permitAll()

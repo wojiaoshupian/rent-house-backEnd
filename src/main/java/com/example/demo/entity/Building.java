@@ -49,9 +49,8 @@ public class Building {
     @Column(name = "hot_water_cost", precision = 10, scale = 2)
     private BigDecimal hotWaterCost;
     
-    @Enumerated(EnumType.STRING)
     @Column(name = "rent_collection_method", nullable = false)
-    private RentCollectionMethod rentCollectionMethod = RentCollectionMethod.FIXED_MONTH_START;
+    private String rentCollectionMethod = RentCollectionMethod.FIXED_MONTH_START.name();
     
     @Column(name = "created_by", nullable = false)
     private Long createdBy; // 创建者用户ID
@@ -64,7 +63,7 @@ public class Building {
     
     public enum RentCollectionMethod {
         FIXED_MONTH_START("固定月初收租"),
-        RENTAL_START_DATE("根据起租日期收租");
+        FLEXIBLE("灵活收租");
         
         private final String description;
         
@@ -108,8 +107,12 @@ public class Building {
     public BigDecimal getHotWaterCost() { return hotWaterCost; }
     public void setHotWaterCost(BigDecimal hotWaterCost) { this.hotWaterCost = hotWaterCost; }
     
-    public RentCollectionMethod getRentCollectionMethod() { return rentCollectionMethod; }
-    public void setRentCollectionMethod(RentCollectionMethod rentCollectionMethod) { this.rentCollectionMethod = rentCollectionMethod; }
+    public RentCollectionMethod getRentCollectionMethod() { 
+        return RentCollectionMethod.valueOf(rentCollectionMethod); 
+    }
+    public void setRentCollectionMethod(RentCollectionMethod rentCollectionMethod) { 
+        this.rentCollectionMethod = rentCollectionMethod.name(); 
+    }
     
     public Long getCreatedBy() { return createdBy; }
     public void setCreatedBy(Long createdBy) { this.createdBy = createdBy; }

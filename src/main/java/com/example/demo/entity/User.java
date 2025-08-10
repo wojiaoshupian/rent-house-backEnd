@@ -15,7 +15,6 @@ import java.util.Set;
 
 @Entity
 @Table(name = "users")
-
 public class User {
     
     @Id
@@ -44,9 +43,8 @@ public class User {
     @Column(name = "full_name")
     private String fullName;
     
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserStatus status = UserStatus.ACTIVE;
+    private String status = UserStatus.ACTIVE.name();
     
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
@@ -77,7 +75,7 @@ public class User {
         this.phone = phone;
         this.email = email;
         this.fullName = fullName;
-        this.status = status;
+        this.status = status.name();
         this.roles = roles;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -102,8 +100,12 @@ public class User {
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
     
-    public UserStatus getStatus() { return status; }
-    public void setStatus(UserStatus status) { this.status = status; }
+    public UserStatus getStatus() { 
+        return UserStatus.valueOf(status); 
+    }
+    public void setStatus(UserStatus status) { 
+        this.status = status.name(); 
+    }
     
     public Set<String> getRoles() { return roles; }
     public void setRoles(Set<String> roles) { this.roles = roles; }

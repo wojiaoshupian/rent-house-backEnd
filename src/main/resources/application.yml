@@ -11,12 +11,12 @@ spring:
   application:
     name: spring-boot-demo
   
-  # 数据库配置 - MySQL
+  # 数据库配置 - PostgreSQL
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/rent_house?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&connectTimeout=30000&socketTimeout=60000
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: rent_house
-    password: Qwesdx1245@
+    url: jdbc:postgresql://127.0.0.1:5432/rent_house
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: 1234567
     hikari:
       connection-timeout: 30000
       idle-timeout: 600000
@@ -32,7 +32,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         # 设置时区
         jdbc:
           time_zone: Asia/Shanghai

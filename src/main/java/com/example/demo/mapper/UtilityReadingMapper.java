@@ -2,10 +2,14 @@ package com.example.demo.mapper;
 
 import com.example.demo.dto.UtilityReadingDto;
 import com.example.demo.entity.UtilityReading;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,6 +25,7 @@ public interface UtilityReadingMapper {
     @Mapping(target = "buildingName", ignore = true)
     @Mapping(target = "readingTypeDescription", source = "readingType", qualifiedByName = "readingTypeToDescription")
     @Mapping(target = "readingStatusDescription", source = "readingStatus", qualifiedByName = "readingStatusToDescription")
+    @Mapping(target = "photos", source = "photos", qualifiedByName = "stringToList")
     UtilityReadingDto toDto(UtilityReading entity);
 
     /**
@@ -33,6 +38,7 @@ public interface UtilityReadingMapper {
     @Mapping(target = "electricityPreviousReading", ignore = true)
     @Mapping(target = "waterPreviousReading", ignore = true)
     @Mapping(target = "hotWaterPreviousReading", ignore = true)
+    @Mapping(target = "photos", source = "photos", qualifiedByName = "listToString")
     UtilityReading toEntity(UtilityReadingDto dto);
 
     /**
@@ -59,5 +65,49 @@ public interface UtilityReadingMapper {
     @Named("readingStatusToDescription")
     default String readingStatusToDescription(UtilityReading.ReadingStatus readingStatus) {
         return readingStatus != null ? readingStatus.getDescription() : null;
+    }
+
+    /**
+     * String转List<String>
+     */
+    @Named("stringToList")
+    default List<String> stringToList(String photos) {
+        if (photos == null || photos.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(photos, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException e) {
+            // 如果JSON解析失败，尝试按逗号分割
+            String[] parts = photos.split(",");
+            List<String> result = new ArrayList<>();
+            for (String part : parts) {
+                String trimmed = part.trim();
+                if (!trimmed.isEmpty()) {
+                    result.add(trimmed);
+                }
+            }
+            return result;
+        }
+    }
+
+    /**
+     * List<String>转String
+     */
+    @Named("listToString")
+    default String listToString(List<String> photos) {
+        if (photos == null || photos.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.writeValueAsString(photos);
+        } catch (JsonProcessingException e) {
+            // 如果JSON序列化失败，使用逗号分隔
+            return String.join(",", photos);
+        }
     }
 }
